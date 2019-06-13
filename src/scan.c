@@ -2,7 +2,7 @@
 
 void readFile(FILE * stream, int8_t * buf, size_t len) {
     if (len != fread(buf, sizeof(int8_t), len, stream)) {
-        syserror(__FUNCTION__, errno);
+        syserr(__FUNCTION__, errno);
     }
     buf[fileLen] = '\0'; // add the null terminator
 }
@@ -11,9 +11,9 @@ bool isValidIdentifierChar(int8_t token) {
     return  ((token >= 'a' && token <= 'z') || (token >= 'A' && token <= 'Z') || token == '_');
 }
 
-void loadSourceFile(uint8_t * filename) {
-    if (sourceFile == NULL)
-        syserror(__FUNCTION__, errno);
+void loadSourceFile(int8_t * filename) {
+    if (filename == NULL)
+        syserr(__FUNCTION__, errno);
 
     FILE * sourceFile = fopen(filename, "r");
 
@@ -21,6 +21,7 @@ void loadSourceFile(uint8_t * filename) {
     sourceText = (int8_t *) malloc(sizeof(int8_t) * (fileLen + 1)); // allocate memory for source text
 
     readFile(sourceFile, sourceText, fileLen);
+    fclose(sourceFile);
 }
 
 int32_t getFileLen(FILE * stream) {
@@ -78,6 +79,8 @@ bool isKeyword(int8_t * word, size_t len) {
                 tok.token = INT;
             else if (match(word, "not", len))
                 tok.token = NOT;
+            else if (match(word, "xor", len))
+                tok.token = XOR;
             else
                 return false;
             advance(len);
@@ -122,7 +125,7 @@ bool isKeyword(int8_t * word, size_t len) {
         tok.lexme = NULL;
         tok.lineNum = startCol;
         tok.colNum = startLine;
-        vector_add(tokens, tok);
+        vector_push(tokens, tok);
     }
     return true;
 }
@@ -138,7 +141,7 @@ int8_t advance(int32_t amount) {
         colNum += amount; // shouldnt overflow since calling function should check token by token
     }
     currentPos += amount;
-    if (currentPos >= filenameLen) return EOF;
+    if (currentPos >= fileLen) return EOF;
     return sourceText[currentPos];
 }
 
@@ -242,13 +245,13 @@ uint32_t find(int8_t c, uint32_t start) {
     while (sourceText[idx] != c) {
         idx++;
         if (idx >= fileLen)
-            lexerror("Ending quotation for string not found", lineNum, colNum);
+            lexerr("Ending quotation for string not found", lineNum, colNum);
     }
     return idx;
 }
 
 bool isCharacterThatNeedsEscape(int8_t c) {
-    return ('r' == c || 't' == c || 'n' == c || '\'' == c || '\"' == c || '\' == c);
+    return ('r' == c || 't' == c || 'n' == c || '\'' == c || '\"' == c || '\\' == c);
 }
 
 // escapes are '\r' '\t' '\n' '\'' '\"' '\n'
@@ -258,7 +261,7 @@ int8_t * parseString(int8_t * str) {
 
     while(str[current] != '\0') {
         // need to consume both the characters in the string if it is escaped
-        if (str[current] == '\' && currentIsCharacterThatNeedsEscape(str[currentPos + 1])) {
+        if (str[current] == '\\' && isCharacterThatNeedsEscape(str[currentPos + 1])) {
             switch (str[current + 1]) {
                 case 'r':
                     str[nextAvailablePos] = '\r';
@@ -293,14 +296,14 @@ int8_t * parseString(int8_t * str) {
     str[nextAvailablePos] = '\0'; // add null terminator
     // then resize the string so we dont waste extra space
     str = (int8_t *) realloc(str, sizeof(int8_t) * (nextAvailablePos + 1));
-    if (NULL == str) syserror(__FUNCTION__, errno);
+    if (NULL == str) syserr(__FUNCTION__, errno);
     return str;
 }
 
 void lexString() {
     // check if first is a single or double quote and capture everything inbetween
-    int8_t stopchar = peek(0);
-    if (stopchar != '\'' || && stopchar != '\"') {
+    int8_t stopch = peek(0);
+    if (stopch != '\'' || stopch != '\"') {
         printf("Function lexString was called incorrectly\n");
         exit(EXIT_FAILURE);
     }
@@ -310,7 +313,7 @@ void lexString() {
 
     advance(1);
     uint32_t startidx = currentPos;
-    uint32_t secondcharidx = find(stopchar, currentPos);
+    uint32_t secondcharidx = find(stopch, currentPos);
     uint32_t strLen = secondcharidx - startidx;
     // allocate the memory to store the string
     int8_t * str = (int8_t *) malloc(strLen + 1);
@@ -329,29 +332,95 @@ void lexString() {
     vector_push(tokens, tok); // add the token
 }
 
-void scanToken(int8_t token) {
-    // simply ignore whitespace
+// simple function to set the start col and start line of a long token
+void setStartToken() {
+    startLineNum = lineNum;
+    startColNum = colNum;
+}
+
+bool isWhiteSpace(int8_t token) {
+    return (token == ' ' || token == '\r' || token == '\t' || token == '\n');
+}
+
+void lexNumber(int8_t * num, size_t len) {
+    token_t tok;
+    tok.token = NUMBER;
+    tok.lexme = malloc(sizeof(int8_t) * len + 1);
+    memcpy(tok.lexme, num, len);
+    tok.lexme[len] = '\0';
+    tok.lineNum = startLineNum;
+    tok.colNum = startColNum;
+    addTokenToList(tok);
+}
+
+bool checkWhitespaceChars(int8_t token) {
+    bool shouldAdvance = false;
     if (token == '\n') {
-        addToken(NEWLINE); // newlines are needed for expression parsing
-        advance(1); // advance automatically advances lineNum and colNum
+        addToken(NEWLINE);
+        shouldAdvance = true;
     }
-    if (token == ' ' || token == '\t' || token == '\r') {
-        // automagically adds keyword as atoken if true
-        if (currentIdentifierLen != 0 && isKeyword(sourceText + currentPos, currentIdentifierLen)) {
-            currentIdentifierLen = 0;
-        }
-        else if (currentIdentifierLen != 0) {
+    // check if the current number ends
+    if (isNum && isWhiteSpace(peek(0))) {
+        isNum = false;
+        lexNumber(sourceText + currentPos - currentIdentifierLen, currentIdentifierLen); // add number to the token list
+        currentIdentifierLen = 0;
+        shouldAdvance = true;
+    }
+    // add token for variable name
+    else if (currentIdentifierLen != 0 && isWhiteSpace(peek(0))) {
+        // keyword automatically added if isKeyword returns true
+        if (!isKeyword(sourceText + currentPos, currentIdentifierLen))
             addTokenIdentifierFromLen(currentIdentifierLen); // tokenize it after retrieving it
-            currentIdentifierLen = 0; // reset identifier len
-        }
-        return;
+        currentIdentifierLen = 0;
+        shouldAdvance = true;
     }
-    if (isValidIdentifierChar(token)) {
+
+    if (isWhiteSpace(token)) {
+        shouldAdvance = true;
+    }
+
+    if (shouldAdvance) {
+        advance(1);
+        return true;
+    }
+    return false;
+}
+
+bool isNumber(int8_t num) {
+    return num >= '0' && num <= '9';
+}
+
+void scanToken(int8_t token) {
+    // token already consumed
+    if (checkWhitespaceChars(token))
+        return;
+    // possibly check decimal point location more carefully?
+    if (currentIdentifierLen == 0 && (isNumber(token) || (token == '.'))) {
+        setStartToken();
+        isNum = true;
         currentIdentifierLen++;
         advance(1);
         return;
     }
-    else if (currentIdentifierLen != 0) {
+    else if (!isNumber(token) && currentIdentifierLen != 0 && isNum) {
+        // found a number
+        lexNumber(sourceText + currentPos - currentIdentifierLen, currentIdentifierLen);
+        currentIdentifierLen = 0;
+        isNum = false;
+    }
+    else if (isNum && (isNumber(token) || token == '.')) {
+        currentIdentifierLen++;
+        advance(1);
+        return;
+    }
+    else if (isValidIdentifierChar(token)) {
+        if (isNum)
+            lexerr("Identifier cannot start with a number", startLineNum, startColNum);
+        currentIdentifierLen++;
+        advance(1);
+        return;
+    }
+    if (currentIdentifierLen != 0) {
         addTokenIdentifierFromLen(currentIdentifierLen);
         currentIdentifierLen = 0;
     }
@@ -359,7 +428,7 @@ void scanToken(int8_t token) {
     switch (token) {
         case '+':
             if (peek(1) == '=') {
-                addToken(PLUS_EQUALS);
+                addToken(PLUS_EQUAL);
                 advance(2);
             }
             else {
@@ -369,7 +438,7 @@ void scanToken(int8_t token) {
             break;
         case '-':
             if (peek(1) == '=') {
-                addToken(MINUS_EQUALS);
+                addToken(MINUS_EQUAL);
                 advance(2);
             }
             else {
@@ -379,7 +448,7 @@ void scanToken(int8_t token) {
             break;
         case '*':
             if (peek(1) == '=') {
-                addToken(STAR_EQUALS);
+                addToken(STAR_EQUAL);
                 advance(2);
             }
             else {
@@ -389,7 +458,7 @@ void scanToken(int8_t token) {
             break;
         case '/':
             if (peek(1) == '=') {
-                addToken(SLASH_EQUALS);
+                addToken(SLASH_EQUAL);
                 advance(2);
             }
             // if single or multi line comment, then skip it
@@ -403,7 +472,7 @@ void scanToken(int8_t token) {
             break;
         case '%':
             if (peek(1) == '=') {
-                addToken(PERCENT_EQUALS);
+                addToken(PERCENT_EQUAL);
                 advance(2);
             }
             else {
@@ -439,7 +508,7 @@ void scanToken(int8_t token) {
         // bitwise operators
         case '&':
             if (peek(1) == '=') {
-                addToken(BITWISE_AND_EQUALS);
+                addToken(BITWISE_AND_EQUAL);
                 advance(2);
             }
             else {
@@ -449,7 +518,7 @@ void scanToken(int8_t token) {
             break;
         case '|':
             if (peek(1) == '=') {
-                addToken(BITWISE_OR_EQUALS);
+                addToken(BITWISE_OR_EQUAL);
                 advance(2);
             }
             else {
@@ -463,7 +532,7 @@ void scanToken(int8_t token) {
             break;
         case '^':
             if (peek(1) == '=') {
-                addToken(BITWISE_XOR_EQUALS);
+                addToken(BITWISE_XOR_EQUAL);
                 advance(2);
             }
             else {
@@ -474,21 +543,21 @@ void scanToken(int8_t token) {
         // relational operators
         case '>':
             if (peek(1) == '=') {
-                addToken(GREATER_THAN_EQUAL);
+                addToken(GREATER_EQUAL);
                 advance(2);
             }
             else {
-                addToken(GREATER_THAN);
+                addToken(GREATER);
                 advance(1);
             }
             break;
         case '<':
             if (peek(1) == '=') {
-                addToken(LESS_THAN_EQUAL);
+                addToken(LESS_EQUAL);
                 advance(2);
             }
             else {
-                addToken(LESS_THAN);
+                addToken(LESS);
                 advance(1);
             }
         case '=':
@@ -519,16 +588,14 @@ void scanToken(int8_t token) {
             addToken(COMMA);
             advance(1);
         default:
-            lexerror("Unexpected character: ", lineNum, colNum);
+            lexerr("Unexpected character", lineNum, colNum);
+            advance(1);
     }
 }
 
 void scanTokensInFile() {
+    int8_t currentToken;
     while ((currentToken = sourceText[currentPos])) {
-
-        if (!isValidChar(currentToken)) {
-            lexerror("Unexpected character", lineNum, colNum);
-        }
 
         scanToken(currentToken);
 
@@ -541,6 +608,15 @@ void initScan() {
     lineNum = 1; // lines start at 1
     colNum = 0; // cols start at 0
     currentPos = 0;
+    seenDecimalPoint = false;
+    isNum = false;
     if (tokens == NULL)
-        syserror(__FUNCTION__, errno);
+        syserr(__FUNCTION__, errno);
+}
+
+int32_t scanFile(int8_t * filename) {
+    if (filename == NULL) return -1;
+    initScan();
+    loadSourceFile(filename);
+    scanTokensInFile();
 }

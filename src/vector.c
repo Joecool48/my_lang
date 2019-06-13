@@ -32,20 +32,16 @@ void vector_push(vector_t * vec, elem_t c) {
 }
 
 elem_t vector_pop(vector_t * vec) {
-    if (0 == vec->size) {
-        printf("Vector.pop: nothing left to pop\n");
-        return -1;
-    }
     vec->size -= 1;
     return vec->arr[vec->size];
 }
 
 elem_t vector_get(vector_t * vec, uint32_t idx) {
-    if (idx >= vec->size) {
-        printf("Vector.get: index out of range\n");
-        return -1;
-    }
     return vec->arr[idx];
+}
+
+int vector_size(vector_t * vec) {
+    return vec->size;
 }
 
 void vector_free(vector_t * vec) {

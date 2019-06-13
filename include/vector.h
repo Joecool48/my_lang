@@ -1,7 +1,11 @@
+#ifndef VECTOR_H
+#define VECTOR_H
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<stdint.h>
 #include<string.h>
+#include"tokens.h"
 
 typedef token_t elem_t;
 
@@ -21,3 +25,7 @@ elem_t vector_pop(vector_t * vec);
 elem_t vector_get(vector_t * vec, uint32_t idx);
 
 void vector_free(vector_t * vec);
+
+int vector_size(vector_t * vec);
+
+#endif

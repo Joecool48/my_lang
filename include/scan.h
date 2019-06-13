@@ -1,13 +1,14 @@
+#ifndef SCAN_H
+#define SCAN_H
+
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<errno.h>
 #include"vector.h"
 #include"error.h"
 
-#include "token.h"
-
-const uint32_t MAX_TOKEN_SIZE = 100;
-const int8_t EOF = -1;
+#include "tokens.h"
 
 typedef int error_t;
 
@@ -20,7 +21,10 @@ uint32_t lineNum;
 uint32_t colNum;
 uint32_t currentPos;
 uint32_t currentIdentifierLen; // for keeping track of name string lengths
-bool isNumber; // lets the current scanner know if it is parsing a number or not
+bool isNum; // lets the current scanner know if it is parsing a number or not
+uint32_t startLineNum; // the starting numbers for the line and col
+uint32_t startColNum;
+bool seenDecimalPoint;
 
 void initScan();
 void loadSourceFile(int8_t * filename);
@@ -39,8 +43,12 @@ void addTokenToList(token_t tok);
 int8_t advance(int32_t amount);
 int8_t peek(int32_t amount);
 int32_t getFileLen(FILE * stream);
-void loadSourceFile(uint8_t * filename);
 bool isValidIdentifierChar(int8_t token);
 void readFile(FILE * stream, int8_t * buf, size_t len);
 bool isKeyword(int8_t * word, size_t len);
 bool match(int8_t * word1, int8_t * word2, size_t len);
+bool isNumber(int8_t num);
+void setStartToken();
+int32_t scanFile(int8_t * filename);
+
+#endif
