@@ -1,0 +1,8 @@
+int i=0
+while (i <= 10) {
+    i += 1
+}
+string str = "Hello its elmo"
+if (str == "I went to the park today") {
+    say("what?")
+}

@@ -16,7 +16,10 @@ void loadSourceFile(int8_t * filename) {
         syserr(__FUNCTION__, errno);
 
     FILE * sourceFile = fopen(filename, "r");
-
+    if (sourceFile == NULL) {
+        printf("Error: source file could not be found\n");
+        exit(1);
+    }
     fileLen = getFileLen(sourceFile);
     sourceText = (int8_t *) malloc(sizeof(int8_t) * (fileLen + 1)); // allocate memory for source text
 
@@ -303,7 +306,7 @@ int8_t * parseString(int8_t * str) {
 void lexString() {
     // check if first is a single or double quote and capture everything inbetween
     int8_t stopch = peek(0);
-    if (stopch != '\'' || stopch != '\"') {
+    if (stopch != '\'' && stopch != '\"') {
         printf("Function lexString was called incorrectly\n");
         exit(EXIT_FAILURE);
     }
@@ -353,25 +356,39 @@ void lexNumber(int8_t * num, size_t len) {
     addTokenToList(tok);
 }
 
+// A function that when called ends the current parsed number and adds it to the token list
+void endNum() {
+    isNum = false;
+    lexNumber(sourceText + currentPos - currentIdentifierLen, currentIdentifierLen); // add number to the token list
+    currentIdentifierLen = 0;
+}
+
+void endKeyword() {
+    // keyword automatically added if isKeyword returns true
+    if (!isKeyword(sourceText + currentPos, currentIdentifierLen))
+        addTokenIdentifierFromLen(currentIdentifierLen); // tokenize it after retrieving it
+    currentIdentifierLen = 0;
+}
+
 bool checkWhitespaceChars(int8_t token) {
     bool shouldAdvance = false;
     if (token == '\n') {
+        if (currentIdentifierLen != 0 && isNum)
+            endNum(); 
+        else if (currentIdentifierLen != 0) {
+            endKeyword();
+        }
         addToken(NEWLINE);
         shouldAdvance = true;
     }
     // check if the current number ends
     if (isNum && isWhiteSpace(peek(0))) {
-        isNum = false;
-        lexNumber(sourceText + currentPos - currentIdentifierLen, currentIdentifierLen); // add number to the token list
-        currentIdentifierLen = 0;
+        endNum();
         shouldAdvance = true;
     }
     // add token for variable name
     else if (currentIdentifierLen != 0 && isWhiteSpace(peek(0))) {
-        // keyword automatically added if isKeyword returns true
-        if (!isKeyword(sourceText + currentPos, currentIdentifierLen))
-            addTokenIdentifierFromLen(currentIdentifierLen); // tokenize it after retrieving it
-        currentIdentifierLen = 0;
+        endKeyword();
         shouldAdvance = true;
     }
 
