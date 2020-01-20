@@ -8,7 +8,7 @@ void readFile(FILE * stream, int8_t * buf, size_t len) {
 }
 
 bool isValidIdentifierChar(int8_t token) {
-    return  ((token >= 'a' && token <= 'z') || (token >= 'A' && token <= 'Z') || token == '_');
+    return  ((token >= 'a' && token <= 'z') || (token >= 'A' && token <= 'Z') || token == '_' || (token >= '0' && token <= '9'));
 }
 
 void loadSourceFile(int8_t * filename) {
@@ -196,13 +196,14 @@ void skipComment() {
     }
     // multi line comment. Keep going till */ is reached
     else if (peek(0) == '/' && peek(1) == '*') {
-        uint32_t tempPos = currentPos;
+        uint32_t tempPos = currentPos + 2; // Ensure to skip the /*
         while (peek(0) != '*' || peek(1) != '/') {
             tempPos++;
             advance(1);
             if (tempPos >= fileLen)
                 return; // end of file
         }
+        advance(2); // Make sure to skip the end */
     }
     else {
         printf("Comment screwed up. fix %s", __FUNCTION__);
@@ -255,6 +256,21 @@ uint32_t find(int8_t c, uint32_t start) {
     return idx;
 }
 
+// finds the end of a string given a starting quote. Keeps in mind escaped quote characters
+uint32_t findEndString(int8_t c, uint32_t start) {
+    if (c != '\"' && c != '\"') {
+        printf("findEndString shouldnt be called with any character other than \' or \"\n");
+        exit(EXIT_FAILURE);
+    }
+    uint32_t idx = start;
+    while (!(sourceText[idx] == c && (idx > 0 && sourceText[idx - 1] != '\\'))) {
+        idx++;
+        if (idx >= fileLen)
+            lexerr("Ending quotation for string not found", lineNum, colNum);
+    }
+    return idx;
+}
+
 bool isCharacterThatNeedsEscape(int8_t c) {
     return ('r' == c || 't' == c || 'n' == c || '\'' == c || '\"' == c || '\\' == c);
 }
@@ -266,7 +282,7 @@ int8_t * parseString(int8_t * str) {
 
     while(str[current] != '\0') {
         // need to consume both the characters in the string if it is escaped
-        if (str[current] == '\\' && isCharacterThatNeedsEscape(str[currentPos + 1])) {
+        if (str[current] == '\\' && isCharacterThatNeedsEscape(str[current + 1])) {
             switch (str[current + 1]) {
                 case 'r':
                     str[nextAvailablePos] = '\r';
@@ -318,7 +334,7 @@ void lexString() {
 
     advance(1);
     uint32_t startidx = currentPos;
-    uint32_t secondcharidx = find(stopch, currentPos);
+    uint32_t secondcharidx = findEndString(stopch, currentPos);
     uint32_t strLen = secondcharidx - startidx;
     // allocate the memory to store the string
     int8_t * str = (int8_t *) malloc(strLen + 1);
@@ -406,7 +422,7 @@ bool checkWhitespaceChars(int8_t token) {
 }
 
 bool isNumber(int8_t num) {
-    return num >= '0' && num <= '9';
+    return (num >= '0' && num <= '9');
 }
 
 void scanToken(int8_t token) {
@@ -421,16 +437,16 @@ void scanToken(int8_t token) {
         advance(1);
         return;
     }
+    else if (isNum && (isNumber(token) || token == '.')) {
+        currentIdentifierLen++;
+        advance(1);
+        return;
+    }
     else if (!isNumber(token) && currentIdentifierLen != 0 && isNum) {
         // found a number
         lexNumber(sourceText + currentPos - currentIdentifierLen, currentIdentifierLen);
         currentIdentifierLen = 0;
         isNum = false;
-    }
-    else if (isNum && (isNumber(token) || token == '.')) {
-        currentIdentifierLen++;
-        advance(1);
-        return;
     }
     else if (isValidIdentifierChar(token)) {
         if (isNum)
