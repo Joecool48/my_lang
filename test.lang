@@ -6,3 +6,7 @@ string str = "Hello its elmo"
 if (str == "I went to the park today") {
     say("what?")
 }
+
+for(int i = 0, i < 100, i += 1) {
+    return hello(134, 23, 12)
+}

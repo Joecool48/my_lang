@@ -11,7 +11,7 @@ void syserr(const int8_t * location, int32_t errnum) {
 }
 
 void lexerr(const int8_t * msg, int32_t lineNum, int32_t colNum) {
-    printf("%d:%d - %s\n", lineNum, colNum, msg);
+    printf("Lex error at %d:%d - %s\n", lineNum, colNum, msg);
     error_occurred = 1;
 }
 

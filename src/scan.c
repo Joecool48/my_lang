@@ -111,6 +111,8 @@ bool isKeyword(int8_t * word, size_t len) {
                 tok.token = FLOAT;
             else if (match(word, "while", len))
                 tok.token = WHILE;
+            else if (match(word, "false", len))
+                tok.token = FALSE;
             else
                 return false;
             advance(len);
@@ -577,6 +579,7 @@ void scanToken(int8_t token) {
                 addToken(LESS);
                 advance(1);
             }
+            break;
         case '=':
             if (peek(1) == '=') {
                 addToken(EQUAL_EQUAL);
@@ -596,6 +599,7 @@ void scanToken(int8_t token) {
                 addToken(BANG);
                 advance(1);
             }
+            break;
         // add string support
         case '\'':
         case '\"':
@@ -604,6 +608,7 @@ void scanToken(int8_t token) {
         case ',':
             addToken(COMMA);
             advance(1);
+            break;
         default:
             lexerr("Unexpected character", lineNum, colNum);
             advance(1);
