@@ -1,0 +1,13 @@
+member_access/parenthesis/array_access -> ("." | "()" | "[]") logical_not/bitwise_not/unary_minus
+logical_not/bitwise_not/unary_minus -> ("not" | "~" | "-") multiplication/division/modulus
+multiplication/division/modulus -> ("*" | "/" | "%") addition/subtraction
+addition/subtraction -> ("+" | "-") shifts
+shifts -> ("<<" | ">>") relational
+relational -> (">=" | ">" | "<=" | "<") comparison
+comparison -> ("==" | "!=") bitwise_and
+bitwise_and -> ("&") bitwise_xor
+bitwise_xor -> ("^") bitwise_or
+bitwise_or -> ("|") logical_and
+logical_and -> ("and") logical_xor
+logical_xor ->  ("xor") logical_or
+logical_or -> ("or") primary

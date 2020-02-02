@@ -18,7 +18,7 @@ enum token {
     EQUAL, EQUAL_EQUAL,
     GREATER, GREATER_EQUAL,
     LESS, LESS_EQUAL,
-
+    // Add shifts later
     // types
     IDENTIFIER, STRING, NUMBER,
 
