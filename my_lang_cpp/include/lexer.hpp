@@ -27,6 +27,9 @@ class Lexer {
     void setStringStart();
     void tokenizeString();
     
+    // for number management
+    bool seenDecimal;
+    public:
     void readSourceFile(string fileName);
     void lexString();
     vector<Token> getTokens();
@@ -40,4 +43,15 @@ class Lexer {
     void reset();
     bool isValidIdentifierChar(char c);
     bool checkPastFileLen(uint64_t amount);
+    string retrieveIdentifier();
+    bool isKeyword(const string & str);
+    void setIdentifierStart();
+    bool isValidIdentifierStartChar(char c);
+    bool isNumber(char c);
+    bool isAlphaOrUnderbar(char c);
+    void setNumberStart();
+    string retrieveNumber();
+    bool isOperator();
+    bool match(const string & searchStr);
+    void tokenDump();
 };
