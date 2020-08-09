@@ -1,0 +1,8 @@
+for (int i = 0; i < 50; i = i + 1) {
+    string s = "Hello there sir";
+}
+
+if (i == 0 and i <= 100) {
+    cint s = 5 xor 5.023 or 90 < !3;
+}
+

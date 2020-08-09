@@ -42,11 +42,10 @@ char Lexer::peek(uint64_t amount) {
 }
 
 bool Lexer::endOfFile() {
-    return currentPos + 1 >= lexText.size();
+    return (currentPos + 1) >= lexText.size();
 }
 
 void Lexer::reset() {
-    lexText.clear();
     sourceFile.clear();
     tokens.clear();
     currentPos = 0;
@@ -243,8 +242,23 @@ bool Lexer::isOperator() {
 
     startLine = currentLine;
     startCol = currentCol;
-
-    if (match(ADD_OPERATOR)) {
+    if (match(LESS_EQUAL)) {
+        type = TokenType::LESS_EQUAL;
+        advance(LESS_EQUAL.size());
+    }
+    else if (match(GREATER_EQUAL)) {
+        type = TokenType::GREATER_EQUAL;
+        advance(GREATER_EQUAL.size());
+    }
+    else if (match(EQUAL_EQUAL)) {
+        type = TokenType::EQUAL_EQUAL;
+        advance(EQUAL_EQUAL.size());
+    }
+    else if (match(BANG_EQUAL)) {
+        type = TokenType::BANG_EQUAL;
+        advance(BANG_EQUAL.size());
+    }
+    else if (match(ADD_OPERATOR)) {
         type = TokenType::PLUS;
         advance(ADD_OPERATOR.size()); 
     }
@@ -280,7 +294,6 @@ bool Lexer::isOperator() {
         type = TokenType::BITWISE_XOR;
         advance(BITWISE_XOR_OPERATOR.size());
     }
-
     else if (match(LEFT_PAREN)) {
         type = TokenType::LEFT_PAREN;
         advance(LEFT_PAREN.size());
@@ -321,33 +334,17 @@ bool Lexer::isOperator() {
         type = TokenType::BANG; 
         advance(BANG.size());
     }
-    else if (match(BANG_EQUAL)) {
-        type = TokenType::BANG_EQUAL;
-        advance(BANG_EQUAL.size());
-    }
     else if (match(EQUAL)) {
         type = TokenType::EQUAL;
         advance(EQUAL.size());
     }
-    else if (match(EQUAL_EQUAL)) {
-        type = TokenType::EQUAL_EQUAL;
-        advance(EQUAL_EQUAL.size());
-    }
     else if (match(GREATER)) {
         type = TokenType::GREATER;
         advance(GREATER.size());
-    }
-    else if (match(GREATER_EQUAL)) {
-        type = TokenType::GREATER_EQUAL;
-        advance(GREATER_EQUAL.size());
-    }
+    } 
     else if (match(LESS)) {
         type = TokenType::LESS;
         advance(LESS.size());
-    }
-    else if (match(LESS_EQUAL)) {
-        type = TokenType::LESS_EQUAL;
-        advance(LESS_EQUAL.size());
     }
     
     if (type != TokenType::NONE) {
@@ -514,6 +511,7 @@ void Lexer::tokenDump() {
                 str << "WHAT IS THIS?!";
                 break;
         }
+        str << " " << it->lineNum << " " << it->colNum;
         str << endl;
     }
     cout << str.str(); 
@@ -521,6 +519,7 @@ void Lexer::tokenDump() {
 
 void Lexer::lexString() {
     reset();
+    cout << "Lexing String" << endl;
     while (!endOfFile()) {
         if (isStringStart()) {
             setStringStart();

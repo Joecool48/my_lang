@@ -8,7 +8,7 @@ DEPS := $(OBJS:.o=.d)
 INC_DIRS := ./include
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-CPPFLAGS ?= $(INC_FLAGS) -MMD -MP
+CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -g
 CFLAGS ?= $(INC_FLAGS) -O0 -g
 
 CC=g++
