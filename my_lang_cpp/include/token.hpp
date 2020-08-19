@@ -1,3 +1,6 @@
+#ifndef TOKEN_HPP
+#define TOKEN_HPP
+
 #include <string>
 #include <iostream>
 
@@ -62,3 +65,4 @@ class Token {
     Token(TokenType tokenType, uint64_t lineNum, uint64_t colNum, uint64_t endLineNum, uint64_t endColNum, string lexme);
 };
 
+#endif

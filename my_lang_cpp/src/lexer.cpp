@@ -53,6 +53,10 @@ void Lexer::reset() {
     currentCol = 0;
 }
 
+vector<Token> Lexer::getTokens() {
+    return this->tokens;
+}
+
 bool Lexer::isValidIdentifierChar(char c) {
     return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || (c >= '0' && c <= '9'));
 }

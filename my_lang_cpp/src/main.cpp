@@ -3,7 +3,7 @@
 #include<sstream>
 
 #include "../include/lexer.hpp"
-
+#include "../include/expr.hpp"
 
 
 int main () {
@@ -12,4 +12,8 @@ int main () {
     lexer.lexString();
     
     lexer.tokenDump();
+    Expr expr;
+    vector<Token> tokens = lexer.getTokens();
+    expr.generateAST(tokens);
+
 }

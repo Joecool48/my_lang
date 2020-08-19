@@ -30,3 +30,57 @@ Token::Token(TokenType tokenType, uint64_t lineNum, uint64_t colNum, uint64_t en
     this->endColNum = endColNum;
     this->lexme = lexme;
 }
+
+string stringifyToken(TokenType type) {
+    stringstream str;
+            switch(type) {
+            case TokenType::LEFT_PAREN:
+                str << "(";
+                break;
+            case TokenType::RIGHT_PAREN:
+                str << ")";
+                break;
+            case TokenType::COMMA:
+                str << ",";
+                break;
+            case TokenType::DOT:
+                str << ".";
+                break;
+            case TokenType::SEMICOLON:
+                str << ";";
+                break;
+            case TokenType::COLON:
+                str << ":";
+                break;
+            case TokenType::LEFT_CURLY:
+                str << "{";
+                break;
+            case TokenType::RIGHT_CURLY:
+                str << "}";
+                break;
+            case TokenType::LEFT_BRACE:
+                str << "[";
+                break;
+            case TokenType::RIGHT_BRACE:
+                str << "]";
+                break;
+            case TokenType::STAR:
+                str << "*";
+                break;
+            case TokenType::SLASH:
+                str << "/";
+                break;
+            case TokenType::PLUS:
+                str << "+";
+                break;
+            case TokenType::MINUS:
+                str << "-";
+                break;
+            case TokenType::PERCENT:
+                str << "%";
+                break;
+            case TokenType::BITWISE_AND:
+                str << "&";
+                break;
+            case TokenType::BITWISE_OR:
+}

@@ -1,3 +1,6 @@
+#ifndef LEXER_HPP
+#define LEXER_HPP
+
 #include <string>
 #include <iostream>
 #include <vector>
@@ -55,3 +58,5 @@ class Lexer {
     bool match(const string & searchStr);
     void tokenDump();
 };
+
+#endif

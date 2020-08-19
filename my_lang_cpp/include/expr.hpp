@@ -1,12 +1,17 @@
+#ifndef EXPR_HPP
+#define EXPR_HPP
+
 #include "token.hpp"
+#include "error.hpp"
 #include <vector>
+#include <cstdarg>
+
 
 class ExprNode {
     public:
     ExprNode *left;
     Token op;
     ExprNode *right;
-    int i;
     ExprNode();
 };
 
@@ -23,7 +28,13 @@ class UnaryNode : public ExprNode {
 class LiteralNode : public ExprNode {
     public:
     Token literal;
-    LiteralNode(Token literal);
+    explicit LiteralNode(Token literal);
+};
+
+class GroupingNode : public ExprNode {
+    public:
+    ExprNode *nestedExpression;
+    explicit GroupingNode(ExprNode *nestedExpression);
 };
 
 class Expr {
@@ -40,10 +51,21 @@ class Expr {
     ExprNode *unary();
     ExprNode *primary();
     
-    bool match(TokenType...);
+    bool match(uint64_t num, TokenType types...);
     Token previous();
     Token peek();
-    Token advance(); 
+    Token advance();
+    bool check(TokenType type);
+    Token consume(TokenType type, const Token & tok, ErrorType errorType);
+
+    uint64_t getLineNum();
+    uint64_t getColNum();
+   
+    uint64_t getLineNum(const Token & tok);
+    uint64_t getColNum(const Token & tok); 
+
+    bool isAtEnd();
+
     public:
     Expr();
     void generateAST(vector<Token> & tokens);
@@ -51,3 +73,4 @@ class Expr {
 
 };
 
+#endif
