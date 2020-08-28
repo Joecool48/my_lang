@@ -14,6 +14,7 @@ int main () {
     lexer.tokenDump();
     Expr expr;
     vector<Token> tokens = lexer.getTokens();
+    cout << "Starting parsing" << endl;
     expr.generateAST(tokens);
-
+    expr.levelDumpAST();
 }

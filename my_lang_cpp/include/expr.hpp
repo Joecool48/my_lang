@@ -5,7 +5,7 @@
 #include "error.hpp"
 #include <vector>
 #include <cstdarg>
-
+#include <queue>
 
 class ExprNode {
     public:
@@ -27,7 +27,6 @@ class UnaryNode : public ExprNode {
 
 class LiteralNode : public ExprNode {
     public:
-    Token literal;
     explicit LiteralNode(Token literal);
 };
 
@@ -44,6 +43,12 @@ class Expr {
     uint64_t currentToken;
 
     ExprNode *expression();
+    ExprNode *logicalOr();
+    ExprNode *logicalXor();
+    ExprNode *logicalAnd();
+    ExprNode *bitwiseOr();
+    ExprNode *bitwiseXor();
+    ExprNode *bitwiseAnd();
     ExprNode *equality();
     ExprNode *comparison();
     ExprNode *addition();
@@ -51,7 +56,7 @@ class Expr {
     ExprNode *unary();
     ExprNode *primary();
     
-    bool match(uint64_t num, TokenType types...);
+    bool match(int num, ...);
     Token previous();
     Token peek();
     Token advance();
@@ -66,11 +71,20 @@ class Expr {
 
     bool isAtEnd();
 
+    void dumpASTHelper(ExprNode * node);    
+    ExprNode* pruneASTHelper(ExprNode * node);
+    bool isBinaryOperator(const Token tok);
+    bool isLiteral(const Token tok); 
+    
+    ExprNode* condense(ExprNode *node);
+    Token operate(const Token & op, const Token & left, const Token & right);
+
     public:
     Expr();
     void generateAST(vector<Token> & tokens);
-    
-
+    void pruneAST();
+    void dumpAST();
+    void levelDumpAST();
 };
 
 #endif
