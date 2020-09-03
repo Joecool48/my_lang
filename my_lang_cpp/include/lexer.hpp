@@ -25,7 +25,7 @@ class Lexer {
     uint64_t startCol;
     uint64_t endLine;
     uint64_t endCol;
-    stringstream assembledStr;;
+    //stringstream assembledStr;;
     bool isStringStart();
     void setStringStart();
     void tokenizeString();

@@ -77,6 +77,8 @@ void Lexer::setStringStart() {
 }
 
 void Lexer::tokenizeString() {
+    stringstream assembledStr;
+
     bool stringEnd = false;
     while (!endOfFile()) {
         if (peek() == '\\') {
@@ -117,7 +119,7 @@ void Lexer::tokenizeString() {
             break;
         } 
         else {
-            assembledStr << peek(0);
+            assembledStr << peek();
             advance();
         }
     }
@@ -206,7 +208,7 @@ bool Lexer::isAlphaOrUnderbar(char c) {
 
 // TODO add hexidecimal support and possibly octal later
 string Lexer::retrieveNumber() {
-    stringstream assembledStr;
+    stringstream str;
     seenDecimal = false;
     while ((isNumber(peek()) || (peek() == '.'))  && !endOfFile()) {
         if (peek() == '.') {
@@ -217,7 +219,7 @@ string Lexer::retrieveNumber() {
                 seenDecimal = true;
             }
         }
-        assembledStr << peek();
+        str << peek();
         advance(); 
     }
 
@@ -225,7 +227,7 @@ string Lexer::retrieveNumber() {
         // TODO error should be space between number and keyword/identifier
     }
 
-    return assembledStr.str();
+    return str.str();
 }
 
 void Lexer::setNumberStart() {

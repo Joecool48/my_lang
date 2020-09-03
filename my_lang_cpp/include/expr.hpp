@@ -12,6 +12,7 @@ class ExprNode {
     ExprNode *left;
     Token op;
     ExprNode *right;
+    ExprNode *nestedExpression;
     ExprNode();
 };
 
@@ -32,7 +33,6 @@ class LiteralNode : public ExprNode {
 
 class GroupingNode : public ExprNode {
     public:
-    ExprNode *nestedExpression;
     explicit GroupingNode(ExprNode *nestedExpression);
 };
 
@@ -75,10 +75,11 @@ class Expr {
     ExprNode* pruneASTHelper(ExprNode * node);
     bool isBinaryOperator(const Token tok);
     bool isLiteral(const Token tok); 
-    
+    bool isGrouping(ExprNode * node);
+
     ExprNode* condense(ExprNode *node);
     Token operate(const Token & op, const Token & left, const Token & right);
-
+    
     public:
     Expr();
     void generateAST(vector<Token> & tokens);

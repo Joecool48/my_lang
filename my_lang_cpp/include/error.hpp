@@ -13,7 +13,7 @@ enum class ErrorType {
 };
 
 
-class Error : public exception {
+class Error {
     public:
         ErrorType errorType;
         string msg;
@@ -24,7 +24,15 @@ class Error : public exception {
         Error(ErrorType errorType, uint64_t lineNum, uint64_t colNum);
         Error(ErrorType errorType, const string & msg, uint64_t lineNum, uint64_t colNum);
         Error(ErrorType errorType, const string & msg);
-        const char * what() const throw();
+        string what();
 };
+
+class ErrorHandler {
+    public:
+    void reportError(const Error & e);
+    private:
+    vector<Error> errors;
+};
+
 
 #endif

@@ -6,21 +6,28 @@ BinaryNode::BinaryNode(ExprNode *left, Token & op, ExprNode *right) {
     this->left = left;
     this->op = op;
     this->right = right;
+    this->nestedExpression = nullptr;
 }
 
 UnaryNode::UnaryNode(ExprNode *left, Token & op) {
     this->left = left;
     this->op = op;
     this->right = nullptr;
+    this->nestedExpression = nullptr;
 }
 
 LiteralNode::LiteralNode(Token literal) {
     this->op = literal;
     this->left = nullptr;
     this->right = nullptr;
+    this->nestedExpression = nullptr;
 }
 
-GroupingNode::GroupingNode(ExprNode *nestedExpression) : nestedExpression(nestedExpression) {}
+GroupingNode::GroupingNode(ExprNode *nestedExpression) {
+    this->left = nullptr;
+    this->right = nullptr;
+    this->nestedExpression = nestedExpression;
+} 
 
 Expr::Expr() : root(nullptr), currentToken(0) {}
 
@@ -512,26 +519,35 @@ void Expr::dumpAST() {
     dumpASTHelper(root);  
 }
 
+bool Expr::isGrouping(ExprNode * node) {
+    return node->nestedExpression != nullptr;
+}
+
 ExprNode* Expr::pruneASTHelper(ExprNode *node) {
     if (node == nullptr) return nullptr;
-    if (node->left != nullptr)
-        node->left = pruneASTHelper(node->left);
-    if (node->right != nullptr)
-        node->right = pruneASTHelper(node->right);
 
-    if (isBinaryOperator(node->op) && node->left != nullptr && node->right != nullptr) {
-        ExprNode *newNode = condense(node);
-        if (newNode != nullptr) {
-            return newNode; 
+    if (isGrouping(node)) {
+        return pruneASTHelper(node->nestedExpression);
+    }
+    else {
+        if (node->left != nullptr)
+            node->left = pruneASTHelper(node->left);
+        if (node->right != nullptr)
+            node->right = pruneASTHelper(node->right);
+
+        if (isBinaryOperator(node->op) && node->left != nullptr && node->right != nullptr) {
+            ExprNode *newNode = condense(node);
+            if (newNode != nullptr) {
+                return newNode; 
+            }
         }
     }
-
     return node;
 }
 
 void Expr::pruneAST() {
     // reduce the AST to its minimal form (i.e 6 + 6 should be reduced to a singular 12 node)
-    pruneASTHelper(root); 
+    root = pruneASTHelper(root); 
 }
 
 uint64_t Expr::getLineNum() {

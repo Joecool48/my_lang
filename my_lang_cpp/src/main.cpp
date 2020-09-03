@@ -16,5 +16,9 @@ int main () {
     vector<Token> tokens = lexer.getTokens();
     cout << "Starting parsing" << endl;
     expr.generateAST(tokens);
+    cout << "Dumping tree unpruned" << endl;
+    expr.levelDumpAST();
+    cout << "Pruning AST" << endl;
+    expr.pruneAST();
     expr.levelDumpAST();
 }
