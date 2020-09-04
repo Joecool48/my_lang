@@ -16,9 +16,10 @@ class Parser {
     private:
     vector<Token> tokens;
     uint64_t currentToken;
-    
-
-
+    bool isAtEnd(uint64_t dist = 0);     
+    Token peek(uint64_t dist = 0);
+    Token advance();
+    Token previous();
 };
 
 #endif
