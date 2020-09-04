@@ -10,10 +10,16 @@ Error::Error(ErrorType errorType, const string & msg, uint64_t lineNum, uint64_t
 
 Error::Error(ErrorType errorType, const string & msg) : errorType(errorType), msg(msg), lineNum(0), colNum(0) {}
 
+string Error::locationToString() {
+    return to_string(this->lineNum) + ":" + to_string(this->colNum);
+}
+
 string Error::what() {
     switch (errorType) {
         case ErrorType::MissingParenException:
-            return ("Expected ')' after '(' at " + to_string(this->lineNum) + ":" + to_string(this->colNum));
+            return ("Expected ')' after '(' at " + locationToString());
+        case ErrorType::ExpectedLeftParenException:
+            return ("Expected '(' after " + msg + " at " + locationToString());
         default:
             return "No exception";
     }
@@ -29,6 +35,7 @@ string Error::what() {
 }
 */
 
-void ErrorHandler::reportError(const Error & e) {
-         
+void ErrorHandler::reportError(Error e) {
+    // this is all it'll do for now
+    cout << e.what() << endl;
 }
