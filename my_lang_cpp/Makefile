@@ -3,12 +3,11 @@ SRC_DIRS ?= ./src
 
 SRCS := $(shell find $(SRC_DIRS) -name *.cpp -or -name *.c -or -name *.s)
 OBJS := $(addsuffix .o,$(basename $(SRCS)))
-DEPS := $(OBJS:.o=.d)
 
 INC_DIRS := ./include
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -g
+CPPFLAGS ?= $(INC_FLAGS) -g
 CFLAGS ?= $(INC_FLAGS) -O0 -g
 
 CC=g++
@@ -18,10 +17,6 @@ $(TARGET): $(OBJS)
 
 .PHONY: clean
 clean:
-	$(RM) $(TARGET) $(OBJS) $(DEPS)
-
--include $(DEPS)
-
--include $(DEPS)
+	$(RM) $(TARGET) $(OBJS)
 
 MKDIR_P ?= mkdir -p

@@ -4,7 +4,8 @@
 
 #include "../include/lexer.hpp"
 #include "../include/expr.hpp"
-
+#include "../include/parser.hpp"
+#include "../include/error.hpp"
 
 int main () {
     Lexer lexer;
@@ -12,13 +13,13 @@ int main () {
     lexer.lexString();
     
     lexer.tokenDump();
-    Expr expr;
     vector<Token> tokens = lexer.getTokens();
     cout << "Starting parsing" << endl;
-    expr.generateAST(tokens);
-    cout << "Dumping tree unpruned" << endl;
-    expr.levelDumpAST();
-    cout << "Pruning AST" << endl;
-    expr.pruneAST();
-    expr.levelDumpAST();
+    
+    ErrorHandler * e = new ErrorHandler();
+
+    Parser p(e);
+    
+    p.addTokens(lexer.getTokens());
+    p.parse(); 
 }
