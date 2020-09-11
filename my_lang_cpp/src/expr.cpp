@@ -31,6 +31,12 @@ GroupingNode::GroupingNode(ExprNode *nestedExpression) {
 
 Expr::Expr() : root(nullptr), currentToken(0) {}
 
+Expr::Expr(vector<Token> & tokens, ErrorHandler * e) {
+    // TODO do stuff with errorhandler later
+    generateAST(tokens);
+    pruneAST();
+}
+
 void Expr::generateAST(vector<Token> & tokens) {
     this->tokens = tokens;
     this->currentToken = 0; 

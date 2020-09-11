@@ -82,6 +82,7 @@ class Expr {
     
     public:
     Expr();
+    Expr(vector<Token> & tokens, ErrorHandler * e);
     void generateAST(vector<Token> & tokens);
     void pruneAST();
     void dumpAST();

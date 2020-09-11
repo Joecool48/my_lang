@@ -60,9 +60,10 @@ int64_t Parser::findMatchingRightParen(int64_t pos) {
     stack<Token> s;
     s.push(tokens[pos]);
     int64_t i = pos; 
-    
+    i++;
+
     while (!s.empty()) {
-        while (i < tokens.size() && tokens[i].tokenType != TokenType::LEFT_PAREN && tokens[i].tokenType != TokenType::RIGHT_PAREN)
+        while (i < tokens.size() && (tokens[i].tokenType != TokenType::LEFT_PAREN && tokens[i].tokenType != TokenType::RIGHT_PAREN))
             i++;
         if (i >= tokens.size()) return -1; // couldnt find ending right paren
         else if (tokens[i].tokenType == TokenType::LEFT_PAREN) {
@@ -82,7 +83,7 @@ int64_t Parser::findMatchingRightParen(int64_t pos) {
 vector<Token> Parser::spliceExpression(uint64_t start, uint64_t end) {
     vector<Token> exprTokens;
 
-    for (uint64_t i = start; i < end; i++) {
+    for (uint64_t i = start; i <= end; i++) {
         exprTokens.push_back(tokens[i]);
     }
     
@@ -90,9 +91,50 @@ vector<Token> Parser::spliceExpression(uint64_t start, uint64_t end) {
 }
 
 void Parser::dumpTokens(const vector<Token> & t) {
+    cout << "Size: " << t.size() << endl;
     for (auto it = t.begin(); it != t.end(); ++it) {
         cout << *it << " "; 
     }
+    cout << endl;
+}
+
+void Parser::analyzeLine() {
+     
+}
+
+
+
+ParserNode* Parser::checkIf(ParserNode * node) {
+    // change out this match need one that doesnt just use global currentToken value
+    if (match(1, TokenType::IF)) {
+            if (peek().tokenType != TokenType::LEFT_PAREN) {
+                eHandler->reportError(Error(ErrorType::ExpectedLeftParenException, "if", getCurrentLineNum(), getCurrentColNum())); 
+                // end here cause fatal error?
+            } 
+            else {
+                int64_t endParen = findMatchingRightParen(currentToken);
+                if (endParen < 0) {
+                    eHandler->reportError(Error(ErrorType::MissingParenException, getCurrentLineNum(), getCurrentColNum()));
+                }
+                else {
+                    vector<Token> exprTokens = spliceExpression(currentToken, endParen);
+                    dumpTokens(exprTokens); // TEST TODO change later
+                    Expr * expr = new Expr(exprTokens, eHandler);
+                    expr->dumpAST(); 
+                    return;
+                } 
+            }
+        }  
+}
+
+// returns the position in the tokens array that it ended in
+uint64_t Parser::parseHelper(vector<ParserNode*> & nodes) {
+    uint64_t currentPos = currentToken;
+    
+    // until it reaches the end of its block
+    while (currentPos < tokens.size() && tokens[currentPos].tokenType != TokenType::RIGHT_CURLY) {
+          
+    }  
 }
 
 void Parser::parse() {
@@ -112,6 +154,9 @@ void Parser::parse() {
                 else {
                     vector<Token> exprTokens = spliceExpression(currentToken, endParen);
                     dumpTokens(exprTokens); // TEST TODO change later
+                    Expr * expr = new Expr(exprTokens, eHandler);
+                    expr->dumpAST(); 
+                    return;
                 } 
             }
         }   

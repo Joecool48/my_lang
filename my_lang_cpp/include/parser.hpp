@@ -6,10 +6,29 @@
 #include<iostream>
 #include"token.hpp"
 #include"error.hpp"
+#include"expr.hpp"
 #include<cstdarg>
 #include<stack>
 
 using namespace std;
+
+enum class ParserNodeType {
+    IF, FOR, WHILE
+};
+
+class ParserNode {
+    public:
+    ParserNodeType type;
+    uint64_t lineNum;
+    uint64_t colNum;
+};
+
+class IfNode : public ParserNode {
+    Expr * expr;
+    vector<ParserNode*> body;
+};
+
+// TODO add more node types later
 
 class Parser {
     public:
