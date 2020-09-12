@@ -7,28 +7,11 @@
 #include"token.hpp"
 #include"error.hpp"
 #include"expr.hpp"
+#include"parserNode.hpp"
 #include<cstdarg>
 #include<stack>
 
 using namespace std;
-
-enum class ParserNodeType {
-    IF, FOR, WHILE
-};
-
-class ParserNode {
-    public:
-    ParserNodeType type;
-    uint64_t lineNum;
-    uint64_t colNum;
-};
-
-class IfNode : public ParserNode {
-    Expr * expr;
-    vector<ParserNode*> body;
-};
-
-// TODO add more node types later
 
 class Parser {
     public:
@@ -36,11 +19,15 @@ class Parser {
     void addTokens(const vector<Token> & tokens);
     void parse();
     private:
+    vector<ParserNode *> parserNodes;
     vector<Token> tokens;
     uint64_t currentToken;
     ErrorHandler *eHandler;
-    bool isAtEnd(uint64_t dist = 0);     
-    Token peek(uint64_t dist = 0);
+
+    uint64_t parseHelper(uint64_t currentPos, vector<ParserNode*> & nodes);
+
+    bool isAtEnd();     
+    Token peek();
     Token advance();
     Token previous();
     uint64_t getCurrentLineNum();
@@ -49,6 +36,15 @@ class Parser {
     vector<Token> spliceExpression(uint64_t start, uint64_t end);
     void dumpTokens(const vector<Token> & t);
     bool match(int num, ...);
+    
+    // members for recursive parsing
+    bool match(uint64_t & currentPos, int num, ...);
+    Token peek(uint64_t & currentPos);
+    bool isAtEnd(uint64_t & currentPos);
+    Token advance(uint64_t & currentPos);
+    Token previous(uint64_t & currentPos);
+    uint64_t getCurrentLineNum(uint64_t & currentPos);
+    uint64_t getCurrentColNum(uint64_t & currentPos);
 };
 
 #endif

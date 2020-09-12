@@ -10,23 +10,20 @@ void Parser::addTokens(const vector<Token> & tokens) {
     this->currentToken = 0;
 }
 
-bool Parser::isAtEnd(uint64_t dist) {
-    return (currentToken + dist >= tokens.size());
+bool Parser::isAtEnd() {
+    return isAtEnd(this->currentToken);
 }
 
-Token Parser::peek(uint64_t dist) {
-    if (isAtEnd(dist)) return Token();
-    return this->tokens[currentToken + dist]; 
+Token Parser::peek() {
+    return peek(this->currentToken);
 }
 
 Token Parser::previous() {
-    return tokens[currentToken - 1];
+    return previous(this->currentToken); 
 }
 
 Token Parser::advance() {
-    if (!isAtEnd())
-        currentToken++;
-    return previous();
+    return advance(this->currentToken);
 }
 
 bool Parser::match(int num, ...) {
@@ -48,12 +45,20 @@ bool Parser::match(int num, ...) {
 
 }
 
+uint64_t Parser::getCurrentLineNum(uint64_t & currentPos) {
+    return peek(currentPos).lineNum + 1;
+}
+
+uint64_t Parser::getCurrentColNum(uint64_t & currentPos) {
+    return peek(currentPos).colNum + 1;
+}
+
 uint64_t Parser::getCurrentLineNum() {
-    return peek().lineNum + 1;
+    return getCurrentLineNum(this->currentToken);
 }
 
 uint64_t Parser::getCurrentColNum() {
-    return peek().colNum + 1;
+    return getCurrentColNum(this->currentToken);
 }
 
 int64_t Parser::findMatchingRightParen(int64_t pos) {
@@ -86,7 +91,7 @@ vector<Token> Parser::spliceExpression(uint64_t start, uint64_t end) {
     for (uint64_t i = start; i <= end; i++) {
         exprTokens.push_back(tokens[i]);
     }
-    
+
     return exprTokens;
 }
 
@@ -98,48 +103,121 @@ void Parser::dumpTokens(const vector<Token> & t) {
     cout << endl;
 }
 
-void Parser::analyzeLine() {
-     
-}
-
-
-
 ParserNode* Parser::checkIf(ParserNode * node) {
     // change out this match need one that doesnt just use global currentToken value
     if (match(1, TokenType::IF)) {
-            if (peek().tokenType != TokenType::LEFT_PAREN) {
-                eHandler->reportError(Error(ErrorType::ExpectedLeftParenException, "if", getCurrentLineNum(), getCurrentColNum())); 
+        if (peek().tokenType != TokenType::LEFT_PAREN) {
+            eHandler->reportError(Error(ErrorType::ExpectedLeftParenException, "if", getCurrentLineNum(), getCurrentColNum())); 
+            // end here cause fatal error?
+        } 
+        else {
+            int64_t endParen = findMatchingRightParen(currentToken);
+            if (endParen < 0) {
+                eHandler->reportError(Error(ErrorType::MissingParenException, getCurrentLineNum(), getCurrentColNum()));
+            }
+            else {
+                vector<Token> exprTokens = spliceExpression(currentToken, endParen);
+                dumpTokens(exprTokens); // TEST TODO change later
+                Expr * expr = new Expr(exprTokens, eHandler);
+                expr->dumpAST(); 
+                return;
+            } 
+        }
+    }  
+}
+
+Token Parser::previous(uint64_t & currentPos) {
+    return tokens[currentPos - 1];
+}
+
+Token Parser::advance(uint64_t & currentPos) {
+    if (!isAtEnd(currentPos))
+        currentPos++;
+    return previous(currentPos);
+}
+
+bool Parser::isAtEnd(uint64_t & currentPos) {
+    return (currentPos >= tokens.size());
+}
+
+Token Parser::peek(uint64_t & currentPos) {
+    if (isAtEnd(currentPos)) return Token();
+    return this->tokens[currentPos]; 
+}
+
+bool Parser::match(uint64_t & currentPos, int num, ...) {
+    va_list args;
+    va_start(args, num);
+
+    int i = 0;
+    while (i < num) {
+        TokenType t = va_arg(args, TokenType);
+        if (peek(currentPos).tokenType == t) {
+            advance(currentPos);
+            va_end(args); 
+            return true;
+        }
+        i++;
+    }
+    va_end(args);
+    return false;
+}
+
+
+// returns the position in the tokens array that it ended in
+uint64_t Parser::parseHelper(uint64_t currentPos, vector<ParserNode*> & nodes) {
+    
+    // check while not at end and not at end of scope
+    while (!isAtEnd(currentPos) && peek(currentPos).tokenType != TokenType::RIGHT_CURLY) {
+        if (match(currentPos, 1, TokenType::IF)) {
+            if (peek(currentPos).tokenType != TokenType::LEFT_PAREN) {
+                eHandler->reportError(Error(ErrorType::ExpectedLeftParenException, "if", getCurrentLineNum(currentPos), getCurrentColNum(currentPos))); 
                 // end here cause fatal error?
             } 
             else {
-                int64_t endParen = findMatchingRightParen(currentToken);
+                int64_t endParen = findMatchingRightParen(currentPos);
                 if (endParen < 0) {
-                    eHandler->reportError(Error(ErrorType::MissingParenException, getCurrentLineNum(), getCurrentColNum()));
+                    eHandler->reportError(Error(ErrorType::MissingParenException, getCurrentLineNum(currentPos), getCurrentColNum(currentPos)));
                 }
                 else {
-                    vector<Token> exprTokens = spliceExpression(currentToken, endParen);
-                    dumpTokens(exprTokens); // TEST TODO change later
+                    vector<Token> exprTokens = spliceExpression(currentPos, endParen);
                     Expr * expr = new Expr(exprTokens, eHandler);
-                    expr->dumpAST(); 
-                    return;
+                    IfNode * node = new IfNode(expr);
+                    nodes.push_back(node);
+                    return parseHelper(currentPos, node->body);
                 } 
             }
-        }  
-}
-
-// returns the position in the tokens array that it ended in
-uint64_t Parser::parseHelper(vector<ParserNode*> & nodes) {
-    uint64_t currentPos = currentToken;
-    
-    // until it reaches the end of its block
-    while (currentPos < tokens.size() && tokens[currentPos].tokenType != TokenType::RIGHT_CURLY) {
-          
-    }  
+        }
+        else if (match(currentPos, 1, TokenType::WHILE)) {
+            if (peek(currentPos).tokenType != TokenType::LEFT_PAREN) {
+                eHandler->reportError(Error(ErrorType::ExpectedLeftParenException, "for", getCurrentLineNum(currentPos), getCurrentColNum(currentPos))); 
+            }
+            else {
+                int64_t endParen = findMatchingRightParen(currentPos);
+                if (endParen < 0) {
+                    eHandler->reportError(Error(ErrorType::MissingParenException, getCurrentLineNum(currentPos), getCurrentColNum(currentPos)));
+                }
+                else {
+                    vector<Token> exprTokens = spliceExpression(currentPos, endParen);
+                    Expr * expr = new Expr(exprTokens, eHandler);
+                    WhileNode * node = new WhileNode(expr);
+                    nodes.push_back(node);
+                    return parseHelper(currentPos, node->body);
+                }
+            }
+        }
+        // can be a function call, start of an assignment, or something else
+        else if (match(currentPos, 1, TokenType::IDENTIFIER)) {
+            if (match(currentPos, 1, TokenType::EQUAL)) {
+                // TODO add assignment detecting code here
+            }  
+        }   
+    }
 }
 
 void Parser::parse() {
     this->currentToken = 0;
-    
+
     while (!isAtEnd()) {
         if (match(1, TokenType::IF)) {
             if (peek().tokenType != TokenType::LEFT_PAREN) {
