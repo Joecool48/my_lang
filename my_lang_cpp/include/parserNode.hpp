@@ -4,7 +4,7 @@
 #define PARSERNODE_H
 
 enum class ParserNodeType {
-    IF, FOR, WHILE
+    IF, FOR, WHILE, ASSIGN
 };
 
 class ParserNode {
@@ -28,6 +28,13 @@ class WhileNode : public ParserNode {
     vector<ParserNode*> body;
     WhileNode(Expr * conditional, vector<ParserNode*> body);
     WhileNode(Expr * conditional);
+};
+
+class AssignNode : public ParserNode {
+    public:
+    Token identifier;
+    Expr * expr;
+    AssignNode(Token identifier, Expr * expr);
 };
 
 #endif /* PARSERNODE_H */

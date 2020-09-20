@@ -42,7 +42,24 @@ bool Parser::match(int num, ...) {
     }
     va_end(args);
     return false;
+}
 
+// simple function to check whether one of the given tokens is at the current position
+bool Parser::check(uint64_t currentPos, int num, ...) {
+    va_list args;
+    va_start(args, num);
+
+    int i = 0;
+    while (i < num) {
+        TokenType t = va_arg(args, TokenType);
+        if (peek(currentPos).tokenType == t) {
+            va_end(args); 
+            return true;
+        }
+        i++;
+    }
+    va_end(args);
+    return false;
 }
 
 uint64_t Parser::getCurrentLineNum(uint64_t & currentPos) {
@@ -126,7 +143,7 @@ ParserNode* Parser::checkIf(ParserNode * node) {
     }  
 }
 
-Token Parser::previous(uint64_t & currentPos) {
+Token Parser::previous(uint64_t currentPos) {
     return tokens[currentPos - 1];
 }
 
@@ -136,11 +153,11 @@ Token Parser::advance(uint64_t & currentPos) {
     return previous(currentPos);
 }
 
-bool Parser::isAtEnd(uint64_t & currentPos) {
+bool Parser::isAtEnd(uint64_t currentPos) {
     return (currentPos >= tokens.size());
 }
 
-Token Parser::peek(uint64_t & currentPos) {
+Token Parser::peek(uint64_t currentPos) {
     if (isAtEnd(currentPos)) return Token();
     return this->tokens[currentPos]; 
 }
@@ -184,13 +201,13 @@ uint64_t Parser::parseHelper(uint64_t currentPos, vector<ParserNode*> & nodes) {
                     Expr * expr = new Expr(exprTokens, eHandler);
                     IfNode * node = new IfNode(expr);
                     nodes.push_back(node);
-                    return parseHelper(currentPos, node->body);
+                    currentPos = parseHelper(currentPos, node->body);
                 } 
             }
         }
         else if (match(currentPos, 1, TokenType::WHILE)) {
             if (peek(currentPos).tokenType != TokenType::LEFT_PAREN) {
-                eHandler->reportError(Error(ErrorType::ExpectedLeftParenException, "for", getCurrentLineNum(currentPos), getCurrentColNum(currentPos))); 
+                eHandler->reportError(Error(ErrorType::ExpectedLeftParenException, "while", getCurrentLineNum(currentPos), getCurrentColNum(currentPos))); 
             }
             else {
                 int64_t endParen = findMatchingRightParen(currentPos);
@@ -202,43 +219,124 @@ uint64_t Parser::parseHelper(uint64_t currentPos, vector<ParserNode*> & nodes) {
                     Expr * expr = new Expr(exprTokens, eHandler);
                     WhileNode * node = new WhileNode(expr);
                     nodes.push_back(node);
-                    return parseHelper(currentPos, node->body);
+                    currentPos = parseHelper(currentPos, node->body);
                 }
             }
         }
         // can be a function call, start of an assignment, or something else
+        // TODO fix to check for type
         else if (match(currentPos, 1, TokenType::IDENTIFIER)) {
+            // save the identifier before assignment
+            Token prev = previous(currentPos);
             if (match(currentPos, 1, TokenType::EQUAL)) {
-                // TODO add assignment detecting code here
-            }  
+                // starting with the next token add all of them up till end of expression
+                vector<Token> toks;
+                // get the tokens for the expression
+                uint64_t newCurrentToken = checkExpression(currentPos, toks);
+                Expr *expr = new Expr(toks, this->eHandler);
+                AssignNode * node = new AssignNode(prev, expr);
+                nodes.push_back(node);
+
+            }
         }   
     }
+    return currentPos;
+}
+
+// A simple function to detect if it is the end of the file, or a newline is found next
+bool Parser::isNextNewline(uint64_t current) {
+    if (isAtEnd(current + 1) || peek(current).lineNum !=  peek(current + 1).lineNum)
+       return true; 
+    return false;
+}
+
+bool Parser::isKeyword(TokenType t) {
+    switch(t) {
+        case TokenType::CLASS:
+        case TokenType::ELSE:
+        case TokenType::IF:
+        case TokenType::FUN:
+        case TokenType::FOR:
+        case TokenType::WHILE:
+        case TokenType::RETURN:
+        case TokenType::VOID:
+        case TokenType::INT:
+        case TokenType::FLOAT:
+        case TokenType::CINT:
+        case TokenType::CFLOAT:
+           return true; 
+    }
+    return false;
+}
+
+bool Parser::isBinaryOperator(TokenType t) {
+    switch(t) {
+        case TokenType::PLUS:
+        case TokenType::MINUS:
+        case TokenType::STAR:
+        case TokenType::SLASH:
+        case TokenType::PERCENT:
+        case TokenType::BITWISE_AND:
+        case TokenType::BITWISE_OR:
+        case TokenType::BITWISE_XOR:
+        case TokenType::AND:
+        case TokenType::OR:
+        case TokenType::XOR:
+            return true;
+    }
+    return false;
+}
+
+bool Parser::isLiteral(TokenType t) {
+    switch(t) {
+        case TokenType::STRING:
+        case TokenType::NUMBER_DECIMAL:
+        case TokenType::NUMBER_FLOAT:
+        case TokenType::NUMBER_HEX:
+        case TokenType::IDENTIFIER:
+            return true;
+    }
+    return false;
+}
+
+// gives the ending token of the expression and compiles them all into a vector
+// Simply ensures the expression is valid assuming the types are correct.
+// DOES NOT TYPECHECK or make sure the operator is valid for a given type
+uint64_t Parser::checkExpression(uint64_t startToken, vector<Token> & toks) {
+    uint64_t current = startToken;
+    while (!isAtEnd(current)) {
+        if (isNextNewline(current)) {
+            // check to see if the current token is a valid end of line, and the next one is a valid start
+            TokenType t_curr = peek(current).tokenType;
+            TokenType t_next = peek(current + 1).tokenType;
+            // incomplete expression, but let the expr class handle that exception
+            // unlear here whether to include the next token in the exception
+            if (isBinaryOperator(t_curr) && !isLiteral(t_next)) {
+                toks.push_back(peek(current));
+                advance(current);
+                break; 
+            }
+            else if (isKeyword(t_next)) {
+                toks.push_back(peek(current));
+                advance(current);
+                break;
+            }
+            else if (!isBinaryOperator(t_curr) && !isBinaryOperator(t_next)) {
+                toks.push_back(peek(current));
+                advance(current);
+                break;
+            }
+        }
+        toks.push_back(peek(current));
+        advance(current);       
+    }
+    return current;
 }
 
 void Parser::parse() {
     this->currentToken = 0;
-
-    while (!isAtEnd()) {
-        if (match(1, TokenType::IF)) {
-            if (peek().tokenType != TokenType::LEFT_PAREN) {
-                eHandler->reportError(Error(ErrorType::ExpectedLeftParenException, "if", getCurrentLineNum(), getCurrentColNum())); 
-                // end here cause fatal error?
-            } 
-            else {
-                int64_t endParen = findMatchingRightParen(currentToken);
-                if (endParen < 0) {
-                    eHandler->reportError(Error(ErrorType::MissingParenException, getCurrentLineNum(), getCurrentColNum()));
-                }
-                else {
-                    vector<Token> exprTokens = spliceExpression(currentToken, endParen);
-                    dumpTokens(exprTokens); // TEST TODO change later
-                    Expr * expr = new Expr(exprTokens, eHandler);
-                    expr->dumpAST(); 
-                    return;
-                } 
-            }
-        }   
-    }
+    // called to assemble each function and class including main
+    parseHelper(this->currentToken, this->parserNodes); 
 }
 
 

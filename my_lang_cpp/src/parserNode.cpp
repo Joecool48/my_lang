@@ -27,3 +27,9 @@ WhileNode::WhileNode(Expr * conditional, vector<ParserNode*> body) {
     this->conditional = conditional;
     this->body = body;
 }
+
+AssignNode::AssignNode(Token identifier, Expr * expr) {
+    this->type = ParserNodeType::ASSIGN;
+    this->identifier = identifier;
+    this->expr = expr;
+}

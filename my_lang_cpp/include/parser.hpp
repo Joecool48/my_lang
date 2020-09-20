@@ -39,12 +39,20 @@ class Parser {
     
     // members for recursive parsing
     bool match(uint64_t & currentPos, int num, ...);
-    Token peek(uint64_t & currentPos);
-    bool isAtEnd(uint64_t & currentPos);
+    Token peek(uint64_t currentPos);
+    bool isAtEnd(uint64_t currentPos);
     Token advance(uint64_t & currentPos);
-    Token previous(uint64_t & currentPos);
+    Token previous(uint64_t currentPos);
+    // same as match, but doesnt advance the position.
+    bool check(uint64_t currentPos, int num, ...);
     uint64_t getCurrentLineNum(uint64_t & currentPos);
     uint64_t getCurrentColNum(uint64_t & currentPos);
+    // return the token number at which the expression ends
+    uint64_t checkExpression(uint64_t startToken, vector<Token> & toks);
+    bool isNextNewline(uint64_t current);
+    bool isKeyword(TokenType t);
+    bool isBinaryOperator(TokenType t);
+    bool isLiteral(TokenType t);
 };
 
 #endif
