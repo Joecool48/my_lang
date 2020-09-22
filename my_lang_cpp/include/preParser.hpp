@@ -9,8 +9,11 @@ using namespace std;
 
 class PreParser {
     PreParser();
+    PreParser(const vector<Token> & tokens);
+    vector<Token> tokens;
+    uint64_t currentToken;
     void addTokens(const vector<Token> & tokens);
-
+    
 };
 
 
