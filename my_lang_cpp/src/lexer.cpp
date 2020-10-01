@@ -9,7 +9,7 @@ void Lexer::readSourceFile(string fileName) {
 }
 
 bool Lexer::isNewline() {
-    return lexText[currentPos] == '\n'; 
+    return lexText[currentPos] == '\n';
 }
 
 char Lexer::getCurrentChar() {
@@ -19,7 +19,7 @@ char Lexer::getCurrentChar() {
 char Lexer::advance() {
     if (isNewline()) {
         currentLine++;
-        currentCol = 0; 
+        currentCol = 0;
     } else {
         currentCol++;
     }
@@ -28,7 +28,7 @@ char Lexer::advance() {
     return peek();
 }
 char Lexer::advance(uint64_t amount) {
-    for (uint64_t i = 0; i < amount && !endOfFile(); i++) advance(); 
+    for (uint64_t i = 0; i < amount && !endOfFile(); i++) advance();
     return peek();
 }
 
@@ -72,8 +72,8 @@ bool Lexer::isStringStart() {
 void Lexer::setStringStart() {
     startQuote = peek();
     startLine = currentLine;
-    startCol = currentCol;  
-    advance(); 
+    startCol = currentCol;
+    advance();
 }
 
 void Lexer::tokenizeString() {
@@ -117,19 +117,19 @@ void Lexer::tokenizeString() {
             stringEnd = true;
             advance(1);
             break;
-        } 
+        }
         else {
             assembledStr << peek();
             advance();
         }
     }
     if (!stringEnd) {
-        // TODO ERROR HERE FOR NOT FINDING END QUOTE 
+        // TODO ERROR HERE FOR NOT FINDING END QUOTE
     }
     // assemble the string and add it as a token
     Token tok(TokenType::STRING, startLine, startCol, endLine, endCol, assembledStr.str());
     tokens.push_back(tok);
-     
+
 }
 
 string Lexer::retrieveIdentifier() {
@@ -145,12 +145,12 @@ string Lexer::retrieveIdentifier() {
 // if so, then it adds it to token list and returns true
 bool Lexer::isKeyword(const string & str) {
     TokenType keywordType = TokenType::NONE;
-    
+
     if (str == "and")
-        keywordType = TokenType::AND; 
+        keywordType = TokenType::AND;
     else if (str == "class")
         keywordType = TokenType::CLASS;
-    else if (str == "else") 
+    else if (str == "else")
         keywordType = TokenType::ELSE;
     else if (str == "if")
         keywordType = TokenType::IF;
@@ -174,11 +174,12 @@ bool Lexer::isKeyword(const string & str) {
         keywordType = TokenType::INT;
     else if (str == "float")
         keywordType = TokenType::FLOAT;
-    else if (str == "cint")
-        keywordType = TokenType::CINT;
-    else if (str == "cfloat")
-        keywordType = TokenType::CFLOAT;
-
+    else if (str == "char")
+        keywordType = TokenType::CHAR;
+    else if (str == "bool")
+        keywordType = TokenType::BOOL;
+    else if (str == "str")
+        keywordType = TokenType::STR;
     if (keywordType != TokenType::NONE) {
         Token tok(keywordType, startLine, startCol);
         tokens.push_back(tok);
@@ -213,14 +214,14 @@ string Lexer::retrieveNumber() {
     while ((isNumber(peek()) || (peek() == '.'))  && !endOfFile()) {
         if (peek() == '.') {
             if (seenDecimal) {
-                // TODO error here for too many decimal points 
+                // TODO error here for too many decimal points
             }
             else {
                 seenDecimal = true;
             }
         }
         str << peek();
-        advance(); 
+        advance();
     }
 
     if (!endOfFile() && isAlphaOrUnderbar(peek())) {
@@ -266,7 +267,7 @@ bool Lexer::isOperator() {
     }
     else if (match(ADD_OPERATOR)) {
         type = TokenType::PLUS;
-        advance(ADD_OPERATOR.size()); 
+        advance(ADD_OPERATOR.size());
     }
     else if (match(SUB_OPERATOR)) {
         type = TokenType::MINUS;
@@ -274,7 +275,7 @@ bool Lexer::isOperator() {
     }
     else if (match(MULT_OPERATOR)) {
         type = TokenType::STAR;
-        advance(MULT_OPERATOR.size()); 
+        advance(MULT_OPERATOR.size());
     }
     else if (match(DIV_OPERATOR)) {
         type = TokenType::SLASH;
@@ -290,7 +291,7 @@ bool Lexer::isOperator() {
     }
     else if (match(BITWISE_OR_OPERATOR)) {
         type = TokenType::BITWISE_OR;
-        advance(BITWISE_OR_OPERATOR.size()); 
+        advance(BITWISE_OR_OPERATOR.size());
     }
     else if (match(BITWISE_NOT_OPERATOR)) {
         type = TokenType::BITWISE_NOT;
@@ -327,7 +328,7 @@ bool Lexer::isOperator() {
     else if (match(RIGHT_CURLY)) {
         type = TokenType::RIGHT_CURLY;
         advance(RIGHT_CURLY.size());
-    } 
+    }
     else if (match(LEFT_BRACE)) {
         type = TokenType::LEFT_BRACE;
         advance(LEFT_BRACE.size());
@@ -337,7 +338,7 @@ bool Lexer::isOperator() {
         advance(RIGHT_BRACE.size());
     }
     else if (match(BANG)) {
-        type = TokenType::BANG; 
+        type = TokenType::BANG;
         advance(BANG.size());
     }
     else if (match(EQUAL)) {
@@ -347,18 +348,18 @@ bool Lexer::isOperator() {
     else if (match(GREATER)) {
         type = TokenType::GREATER;
         advance(GREATER.size());
-    } 
+    }
     else if (match(LESS)) {
         type = TokenType::LESS;
         advance(LESS.size());
     }
-    
+
     if (type != TokenType::NONE) {
         Token tok(type, startLine, startCol);
         tokens.push_back(tok);
-        return true; 
+        return true;
     }
-    
+
     return false;
 }
 
@@ -489,11 +490,11 @@ void Lexer::tokenDump() {
             case TokenType::FLOAT:
                 str << "float";
                 break;
-            case TokenType::CINT:
-                str << "cint";
+            case TokenType::CHAR:
+                str << "char";
                 break;
-            case TokenType::CFLOAT:
-                str << "cfloat";
+            case TokenType::BOOL:
+                str << "bool";
                 break;
             case TokenType::WHILE:
                 str << "while";
@@ -509,7 +510,6 @@ void Lexer::tokenDump() {
                 break;
             case TokenType::NUMBER_FLOAT:
             case TokenType::NUMBER_DECIMAL:
-            case TokenType::NUMBER_HEX:
             case TokenType::IDENTIFIER:
                 str << it->lexme;
                 break;
@@ -520,7 +520,7 @@ void Lexer::tokenDump() {
         str << " " << it->lineNum << " " << it->colNum;
         str << endl;
     }
-    cout << str.str(); 
+    cout << str.str();
 }
 
 void Lexer::lexString() {
@@ -532,16 +532,16 @@ void Lexer::lexString() {
             tokenizeString();
         }
         else if (isOperator()) {
-        
+
         }
         else if (isNumber(peek())) {
             setNumberStart();
             string str = retrieveNumber();
             TokenType type = TokenType::NUMBER_DECIMAL;
-            if (seenDecimal) 
+            if (seenDecimal)
                 type = TokenType::NUMBER_FLOAT;
-            
-            Token tok(type, startLine, startCol, str); 
+
+            Token tok(type, startLine, startCol, str);
             tokens.push_back(tok);
         }
         else if (isValidIdentifierStartChar(peek())) {
@@ -555,6 +555,6 @@ void Lexer::lexString() {
         }
         else {
             advance(1); // skip spaces and newlines
-        } 
-    } 
+        }
+    }
 }

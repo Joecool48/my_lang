@@ -11,6 +11,9 @@ using namespace std;
 enum class ErrorType {
     MissingParenException,
     ExpectedLeftParenException,
+    ExpectedIdentifierException,
+    ExpectedCurlyException,
+    AlreadyDeclaredException,
     NoException
 };
 

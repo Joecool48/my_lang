@@ -8,12 +8,13 @@
 #include"error.hpp"
 #include"expr.hpp"
 #include"parserNode.hpp"
+#include"coreParser.hpp"
 #include<cstdarg>
 #include<stack>
 
 using namespace std;
 
-class Parser {
+class Parser : public CoreParser {
     public:
     Parser(ErrorHandler *e);
     void addTokens(const vector<Token> & tokens);
@@ -26,7 +27,7 @@ class Parser {
 
     uint64_t parseHelper(uint64_t currentPos, vector<ParserNode*> & nodes);
 
-    bool isAtEnd();     
+    bool isAtEnd();
     Token peek();
     Token advance();
     Token previous();
@@ -36,7 +37,7 @@ class Parser {
     vector<Token> spliceExpression(uint64_t start, uint64_t end);
     void dumpTokens(const vector<Token> & t);
     bool match(int num, ...);
-    
+
     // members for recursive parsing
     bool match(uint64_t & currentPos, int num, ...);
     Token peek(uint64_t currentPos);

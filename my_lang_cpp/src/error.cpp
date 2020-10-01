@@ -20,6 +20,12 @@ string Error::what() {
             return ("Expected ')' after '(' at " + locationToString());
         case ErrorType::ExpectedLeftParenException:
             return ("Expected '(' after " + msg + " at " + locationToString());
+        case ErrorType::ExpectedIdentifierException:
+            return ("Expected identifier after " + msg + " at " + locationToString());
+        case ErrorType::ExpectedCurlyException:
+            return ("Expected { after " + msg + " at " + locationToString());
+        case ErrorType::AlreadyDeclaredException:
+            return (msg + " at " + locationToString());
         default:
             return "No exception";
     }
@@ -27,7 +33,7 @@ string Error::what() {
 
 /*MissingParenException::MissingParenException(uint64_t lineNum, uint64_t colNum) {
     this->lineNum = lineNum;
-    this->colNum = colNum;    
+    this->colNum = colNum;
 }
 */
 /*const char * MissingParenException::what() const throw() {

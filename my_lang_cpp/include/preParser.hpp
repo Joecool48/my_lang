@@ -4,16 +4,25 @@
 #include<vector>
 #include"token.hpp"
 #include"error.hpp"
+#include"coreParser.hpp"
+#include"type.hpp"
+#include<stack>
 
 using namespace std;
 
-class PreParser {
-    PreParser();
-    PreParser(const vector<Token> & tokens);
-    vector<Token> tokens;
-    uint64_t currentToken;
-    void addTokens(const vector<Token> & tokens);
-    
+class PreParser : public CoreParser {
+public:
+    Qualifiers qualifiers;
+    ErrorHandler eHandler;
+    PreParser(ErrorHandler * e);
+    PreParser(ErrorHandler * e, const vector<Token> & tokens);
+    unordered_map<string, Type*> completeTypes;
+    unordered_map<string, Type*> incompleteTypes;
+    void preParse();
+    void init();
+    bool matchPrimative(); // determine if current token is a primative
+    Type* trackType(const Token & type);
+    void gatherMembers(Type *newType);
 };
 
 
